@@ -15,7 +15,11 @@ class AuthController {
                 return apiResponse.validationError(res, err);
             // registered user
             else if (user){
-                return apiResponse.successResponseWithData(res, 'Success', {token: user.generateJwt()});
+                return apiResponse.successResponseWithData(
+                  res,
+                  "Success",
+                  { token: user.generateJwt() },
+                );
             }
             // unknown user or wrong password
             else

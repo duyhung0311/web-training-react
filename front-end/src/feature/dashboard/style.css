@@ -1,0 +1,92 @@
+.container {
+  width: 100%;
+  height: auto;
+  display: flex;
+}
+.left-side {
+  width: 25%;
+  height: auto;
+  background-color: #31353d;
+}
+.right-side {
+  width: 75%;
+  height: auto;
+}
+.inner-topic {
+  width: 90%;
+  display: flex;
+  border-bottom: 1px solid gray;
+  margin-left: 5%;
+}
+.flex-center-right-side {
+  padding-top: 8%;
+  width: 88%;
+  padding-bottom: 10px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 30px;
+  font-weight: bold;
+}
+.logout{
+    font-family: "Montserrat", sans-serif;
+
+}
+.exit-icon {
+  width: 12%;
+  padding-top: 8%;
+  font-size: 25px;
+  color: black;
+  font-family: "Montserrat", sans-serif;
+  display: flex;
+}
+.container-btn {
+  padding-top: 2%;
+  width: 90%;
+  margin-left: 5%;
+  display: flex;
+}
+.btn-create {
+  font-family: "Montserrat", sans-serif;
+  font-size: 18px;
+  line-height: 20px;
+  border-radius: 5px;
+}
+.btn-delete-all {
+  font-family: "Montserrat", sans-serif;
+  font-size: 18px;
+  border-radius: 5px;
+  background-color: #ee4035;
+  margin-left: 15px;
+  color: white;
+}
+.selectAssignedTo {
+  margin-left: 15px;
+  width: 110px;
+}
+.selectLeadSource {
+  margin-left: 15px;
+  width: 140px;
+}
+.searchContact {
+  margin-left: 15px;
+}
+.table {
+  font-family: "Montserrat", sans-serif;
+  width: 100%;
+}
+.border-container {
+  border: 2px lightgray solid;
+}
+.border-container:not(:first-child) {
+  margin-top: 10%;
+}
+.contentLeft {
+  width: 17%;
+  height: auto;
+  font-family: "Montserrat", sans-serif;
+  font-weight: bold;
+  font-size: 18px;
+}
+.contentRight{
+  font-family: "Montserrat", sans-serif;
+  font-size: 18px;
+}
