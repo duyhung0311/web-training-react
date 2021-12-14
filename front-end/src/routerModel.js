@@ -1,39 +1,54 @@
-import { Navigate } from "react-router-dom";
-import Contact from './feature/contact'
+import Contact from "./feature/contact";
 import Login from "./feature/login";
 import SalesOrder from "./feature/sales-order";
 import User from "./feature/user";
-import Dashboard from "./feature/dashboard"
+import Dashboard from "./feature/dashboard";
 import Profile from "./feature/profile";
 import Password from "./feature/password";
-const routes = (isLoggedIn) => [
+import PrivateRoute from "./privateRoute";
+const routes = [
   {
-    path: "/user",
-    element: isLoggedIn ? <User /> : <Navigate to="/" />,
-  },
-  {
-    path: "/contact",
-    element: isLoggedIn ? <Contact /> : <Navigate to="/" />,
-  },
-  {
-    path: "/sales-order",
-    element: isLoggedIn ? <SalesOrder /> : <Navigate to="/" />,
+    path: "/login",
+    component: <Login />,
   },
   {
     path: "/dashboard",
-    element: isLoggedIn ? <Dashboard /> : <Navigate to="/" />,
+    component: <Dashboard />,
+  },
+  {
+    path: "/contact",
+    component: <Contact />,
+  },
+  {
+    path: "/contact/:leadSourceValue/:assignedValue",
+    component: <Contact />,
+  },
+  {
+    path: "/sales-order",
+    component: <SalesOrder />,
+  },
+  {
+    path:"/sales-order/:statusValue",
+    component: <SalesOrder />,
   },
   {
     path: "/profile",
-    element: isLoggedIn ? <Profile /> : <Navigate to="/" />,
+    component: <Profile />,
   },
   {
     path: "/password",
-    element: isLoggedIn ? <Password /> : <Navigate to="/" />,
+    component: <Password />,
   },
   {
-    path: "/",
-    element: <Login />,
+    path: "/user",
+    component:
+      localStorage.getItem("admin") === "false" ? (
+        <PrivateRoute>
+          <User />
+        </PrivateRoute>
+      ) : (
+        <User />
+      ),
   },
 ];
 

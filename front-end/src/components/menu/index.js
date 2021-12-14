@@ -1,10 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import "./style.css";
-import { Form, Input, Tag } from "antd";
+import { Form, Tag } from "antd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUserCircle,
-  faPhone,
   faCheck,
   faTachometerAlt,
   faUser,
@@ -12,24 +11,37 @@ import {
   faShippingFast,
   faAddressCard,
   faUnlock,
-  faUserLock,
-  faUserCheck,
 } from "@fortawesome/free-solid-svg-icons";
-import authApi from "../../api/authApi";
-import { Routes, Route, Link, Outlet } from "react-router-dom";
-
+import { Link } from "react-router-dom";
+import userApi from "../../api/userApi";
+import jwt_decode from "jwt-decode";
 function Menu() {
   const [form] = Form.useForm();
-  const getProfile = async () => {
-    try {
-      const response = await authApi.profile();
-      console.log("Get profile successfully", response.data.data.user);
-      form.setFieldsValue(response.data.data.user);
-      // localStorage.setItem("key", response.data.data.user.isAdmin);
-    } catch (error) {}
-  };
+
+  const [currentTheme, setCurrentTheme] = useState();
+  const [currentTheme_, setCurrentTheme_] = useState("");
+  function checkUserData() {
+    const item = JSON.parse(localStorage.getItem("jwt_Token"));
+    let decodedToken = jwt_decode(item);
+    const searchById = () => {
+      const fetchGetById = async () => {
+        try {
+          const response = await userApi.getId(decodedToken._id);
+          console.log("Id successfully", response.data.data.user);
+          console.log("Admin", JSON.stringify(response.data.data.user.isAdmin));
+          if (item) {
+            setCurrentTheme(response.data.data.user.name);
+            setCurrentTheme_(JSON.stringify(response.data.data.user.isAdmin));
+          }
+        } catch (error) {}
+      };
+      fetchGetById();
+    };
+    searchById();
+  }
   useEffect(() => {
-    getProfile();
+    window.addEventListener("storage", checkUserData);
+    window.dispatchEvent(new Event("storage"));
   }, []);
   return (
     <div>
@@ -59,9 +71,7 @@ function Menu() {
                     name="username"
                     style={{ paddingLeft: "10px", fontSize: "18px" }}
                   >
-                    <div style={{ color: "white" }}>
-                      {localStorage.getItem("name")}
-                    </div>
+                    <div style={{ color: "white" }}>{currentTheme}</div>
                   </Form.Item>
                 </div>
                 <div style={{ display: "flex", paddingTop: "10px" }}>
@@ -70,7 +80,8 @@ function Menu() {
                     name="name"
                     style={{ paddingLeft: "10px", fontSize: "18px" }}
                   >
-                    {localStorage.getItem("admin") === "false" ? (
+                    {/* <div>{currentTheme_}</div> */}
+                    {currentTheme_ === "false" ? (
                       <Tag color="#2db7f5">User</Tag>
                     ) : (
                       <Tag color="#87d068">Admin</Tag>

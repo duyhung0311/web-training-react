@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import Menu from "../../components/menu";
-import { useLocation } from "react-router-dom";
+import {  useParams } from "react-router-dom";
 import "./style.css";
 import {
   Button,
@@ -25,31 +24,50 @@ import userApi from "../../api/userApi";
 import { useNavigate } from "react-router-dom";
 import moment from "moment";
 import authApi from "../../api/authApi";
-function Contact() {
+function Contact(props) {
   let arrKey = [];
+  const params = useParams();
   const navigate = useNavigate();
   const [listContact, setListContact] = useState([]);
   const [stateUser, setStateUser] = useState([]);
   const [isloadingUpdate, setIsloadingUpdate] = useState(false);
   const [listUser, setListUser] = useState([]);
   const [dataModal, setDataModal] = useState({});
-  const [dataToggleModal, setDataToggleModal] = useState({});
   const [modalCreate, setModalCreate] = useState(false);
   const [modalEdit, setModalEdit] = useState(false);
-  const location = useLocation();
   const [form] = Form.useForm();
   const [form_edit] = Form.useForm();
   const [selectionType, setSelectionType] = useState("checkbox");
-  const [valueInput, setValueInput] = useState("");
   const typingTimeout = useRef(null);
+  useEffect(() => {
+    fetchContactList();
+    fetchUserList();
+    // console.log(params);
+    filterJoint();
+  }, []);
+  useEffect(() => {
+    const token = JSON.parse(localStorage.getItem("jwt_Token"));
+    // console.log(JSON.parse(localStorage.getItem("jwt_Token")));
+    // console.log(location.pathname)
+    // console.log(params)
+    Object.keys(params).length === 0
+      ? 
+       contactApi.getAll(token).then((res) => {
+           setListContact(res.data.data.contacts);
+         })
+      :<></>
+      //  console.log("2");
+    // console.log("<<initial")
+  }, []);
   const openModal_Create = () => {
     setModalCreate(true);
+    form.resetFields();
   };
   const onConfirm = () => {
     const removeToken = authApi.doLogout();
     if (removeToken == null) {
       localStorage.clear();
-      navigate("/");
+      navigate("/login");
     }
   };
   const [dataAfter, setDataAfter] = useState({
@@ -57,22 +75,10 @@ function Contact() {
   });
   const openModal_Edit = (values) => {
     setModalEdit(true);
-    const datepicker = moment(values.dob);
-    values = { ...values, birthday: datepicker };
+    values = { ...values, dob: moment(values.dob) };
     console.log(values);
+    form_edit.setFieldsValue(values);
     setDataModal(values);
-    setDataToggleModal(values);
-    form_edit.resetFields();
-    dataAfter.birthday = values.dob;
-    const newData = {
-      ...values,
-      birthday: dataAfter.birthday,
-    };
-    console.log(newData);
-    form_edit.setFieldsValue(newData);
-    //  form_edit.setFieldsValue(values);
-    //  setDataModal(values);
-    //  console.log(values._id);
   };
   const handleCancel_createContact = () => {
     setModalCreate(false);
@@ -108,7 +114,6 @@ function Contact() {
         icon: <CheckOutlined style={{ color: "#108ee9" }} />,
         placement: "topRight",
       });
-      // form.resetFields();
       setModalEdit(false);
     } catch (error) {
       setIsloadingUpdate(false);
@@ -116,19 +121,27 @@ function Contact() {
     }
   };
   const onFinish_editContact = (values) => {
-    console.log(values);
-    const date = moment(values.dob);
-    console.log(form_edit.getFieldValue());
-    console.log(date);
-    const data = { ...values, ...dataAfter };
-    console.log(data);
-    fetchEditContact(dataModal._id, data);
+    const result = {
+      ...values,
+      dob: values["dob"].format("YYYY-MM-DD"),
+    };
+    console.log("<<<result", result);
+    fetchEditContact(dataModal._id, result);
   };
   const onFinish_createContact = (values) => {
     console.log(values);
+    console.log(values["dob"].format("YYYY-MM-DD"));
+    const variable = values["dob"].format("YYYY-MM-DD");
+    var start = moment(variable);
+    console.log(start);
+    const result = {
+      ...values,
+      dob: values["dob"].format("YYYY-MM-DD"),
+    };
     const fetchCreateContact = async () => {
       try {
-        const response = await contactApi.post(values);
+        setIsloadingUpdate(true);
+        const response = await contactApi.post(result);
         console.log("Fetch create contact successfully: ", response);
         setListContact([...listContact, response]);
         fetchContactList();
@@ -140,6 +153,7 @@ function Contact() {
         form.resetFields();
         setModalCreate(false);
       } catch (error) {
+        setIsloadingUpdate(false);
         console.log(error);
       }
     };
@@ -206,56 +220,52 @@ function Contact() {
     console.log(e);
     message.error("Click on No");
   };
-  const filterAssignedTo = (values) => {
-    console.log(values)
+  const filterJoint = (values) => {
+    // console.log(values);
+    if (values === undefined) {
+      // console.log("1");
+      fetchContactList();
+    }
+    if (values) {
+      navigate("/contact");
+    }
     const filtered = async () => {
       try {
-        console.log(values);
-        // setInitialValue(...initialValue, location.state.name);
-        console.log(location.state.name);
-        const response = await contactApi.getAll();
-        console.log(
-          "Fetch list contacts successfully: ",
-          response
+        // console.log(values);
+        const token = JSON.parse(localStorage.getItem("jwt_Token"));
+        // console.log("<<<<", token);
+        const response = await contactApi.getAll(token);
+        const result = response.data.data.contacts.filter((contacts) =>
+          values === undefined
+            ? contacts.leadSrc === params.leadSourceValue ||
+              contacts.assignedTo === params.assignedValue
+            : contacts.leadSrc === values || contacts.assignedTo === values
         );
-        const result = response.data.data.contacts.filter(
-          (contacts) =>
-            // contacts.assignedTo === values ||
-            // contacts.leadSrc === location.state.name ||
-            // contacts.assignedTo === location.state.value ||
-            contacts.leadSrc === values
-          // contacts.assignedTo === location.state.user
-        );
-        console.log(result);
+        // console.log(result);
 
         setListContact(result);
       } catch (error) {}
     };
-    filtered()
+    filtered();
   };
-
   const handleChange_filterLeadSrc = (value) => {
-    // value=location.state.name
-    // setValueSelect(location.state.name);
-    // console.log(`selected ${valueSelect}`);
     console.log(value);
-    value === undefined ? fetchContactList() : filterAssignedTo(value);
+    value === undefined ? fetchContactList() : filterJoint(value);
   };
   const handleChange_filterAssignedTo = (value) => {
     console.log(`selected ${value}`);
-    filterAssignedTo(value);
-    // console.log("a");
+    value === undefined ? fetchContactList() : filterJoint(value);
   };
   const fetchContactList = async () => {
     try {
-      const response = await contactApi.getAll();
-      // console.log("Fetch list contact successfully: ", response);
+      const token = JSON.parse(localStorage.getItem("jwt_Token"));
+      // console.log("<<<<token", token);
+      const response = await contactApi.getAll(token);
+      // console.log("api get contact all", response);
       const variable = localStorage.getItem("user");
-      // console.log(variable);
       const result = response.data.data.contacts.filter(
         (contacts) => contacts.assignedTo === variable
       );
-      // console.log(result);
       setStateUser(result);
       setListContact(response.data.data.contacts);
       setIsloadingUpdate(false);
@@ -272,18 +282,6 @@ function Contact() {
       console.log("Failed to fetch users list: ", error);
     }
   };
-
-  useEffect(() => {
-    fetchContactList();
-    fetchUserList();
-    console.log("duy heo", location.state);
-    // setInitialValue(location.state.name);
-    // setValueSelect({ value: location.state.name });
-  }, []);
-
-  useEffect(() => {
-        filterAssignedTo();
-  }, 2);
   const columns = [
     {
       title: "Creator",
@@ -314,15 +312,6 @@ function Contact() {
       key: "x",
       render: (text, record) => (
         <div style={{ display: "flex" }}>
-          {/* <Popconfirm
-            title="BẠN CÓ CHẮC MUỐN XÓA DỮ LIỆU KHÔNG?"
-            onConfirm={() => fetchDeleteElectricityWater(record)}
-            onCancel={cancel}
-            okText="Có"
-            cancelText="Không" 
-          > */}
-
-          {/* </Popconfirm>  */}
           <div
             style={{ paddingLeft: "10px", lineHeight: "1px" }}
             onClick={() => {
@@ -353,11 +342,7 @@ function Contact() {
         footer={null}
         // onOk={handleCancel_createUser}
       >
-        <Form
-          form={form}
-          initialValues={dataToggleModal}
-          onFinish={onFinish_createContact}
-        >
+        <Form form={form} onFinish={onFinish_createContact}>
           <Form.Item
             label="Contact Name"
             name="contactName"
@@ -523,7 +508,7 @@ function Contact() {
       >
         <Spin spinning={isloadingUpdate} size="large">
           <Form
-            // form={form_edit}
+            form={form_edit}
             initialValues={{ remember: true }}
             onFinish={onFinish_editContact}
           >
@@ -534,14 +519,14 @@ function Contact() {
                 { required: true, message: "Please input your contact name!" },
               ]}
             >
-              <Input defaultValue={dataToggleModal.contactName} />
+              <Input />
             </Form.Item>
             <Form.Item
               label="Salutation"
               name="salutation"
               rules={[{ required: true, message: "Please tick salutation!" }]}
             >
-              <Radio.Group defaultValue={dataToggleModal.salutation}>
+              <Radio.Group>
                 <Space direction="vertical">
                   <Radio value="None">None</Radio>
                   <Radio value="Mr">Mr</Radio>
@@ -561,7 +546,6 @@ function Contact() {
               ]}
             >
               <Input
-                defaultValue={dataToggleModal.mobilePhone}
                 onChange={(e) => {
                   const value = e.target.value;
                   console.log(!isNaN(+value)); // true if its a number, false if not
@@ -587,7 +571,7 @@ function Contact() {
                 },
               ]}
             >
-              <Input defaultValue={dataToggleModal.email} />
+              <Input />
             </Form.Item>
             <Form.Item
               label="Organization"
@@ -596,7 +580,7 @@ function Contact() {
                 { required: true, message: "Please input your organization!" },
               ]}
             >
-              <Input defaultValue={dataToggleModal.organization} />
+              <Input />
             </Form.Item>
             <Form.Item
               label="Date of Birth"
@@ -610,7 +594,6 @@ function Contact() {
                 onChange={(date, dateString) =>
                   setDataAfter({ ...dataAfter, birthday: dateString })
                 }
-                defaultValue={dataToggleModal.birthday}
               />
             </Form.Item>
 
@@ -619,7 +602,7 @@ function Contact() {
               name="leadSrc"
               rules={[{ required: true, message: "Please input lead source!" }]}
             >
-              <Radio.Group defaultValue={dataToggleModal.leadSrc}>
+              <Radio.Group>
                 <Space direction="vertical">
                   <Radio value="Existing Customer">Existing Customer</Radio>
                   <Radio value="Partner">Partner</Radio>
@@ -635,7 +618,7 @@ function Contact() {
               name="assignedTo"
               rules={[{ required: true, message: "Please enter assigned to!" }]}
             >
-              <Select defaultValue={dataToggleModal.assignedTo}>
+              <Select>
                 {listUser.map((userId) => (
                   <Select.Option key={userId.username} value={userId.username}>
                     {userId.username}
@@ -648,7 +631,7 @@ function Contact() {
               name="creator"
               rules={[{ required: true, message: "Please enter creator!" }]}
             >
-              <Select defaultValue={dataToggleModal.creator}>
+              <Select>
                 {listUser.map((userId) => (
                   <Select.Option key={userId.username} value={userId.username}>
                     {userId.username}
@@ -663,7 +646,7 @@ function Contact() {
                 { required: true, message: "Please enter your address!" },
               ]}
             >
-              <Input defaultValue={dataToggleModal.address} />
+              <Input />
             </Form.Item>
             <Form.Item
               label="Description"
@@ -672,10 +655,7 @@ function Contact() {
                 { required: true, message: "Please enter your description!" },
               ]}
             >
-              <Input
-                defaultValue={dataToggleModal.description}
-                value={dataToggleModal.description}
-              />
+              <Input />
             </Form.Item>
             <div style={{ display: "flex" }}>
               <Button
@@ -698,130 +678,122 @@ function Contact() {
           </Form>
         </Spin>
       </Modal>
-      <div className="container">
-        <div className="left-side">
-          <Menu />
+      <div className="inner-topic">
+        <div className="flex-center-right-side">
+          <p>CONTACTS MANAGEMENT</p>
         </div>
-        <div className="right-side">
-          <div className="inner-topic">
-            <div className="flex-center-right-side">
-              <p>CONTACTS MANAGEMENT</p>
-            </div>
-            <div className="exit-icon">
-              <div>
-                <Popconfirm
-                  title="Are you sure to delete this task?"
-                  onConfirm={onConfirm}
-                  okText="Yes"
-                  cancelText="No"
-                >
-                  <div className="logout" href="#">
-                    Logout
-                  </div>
-                </Popconfirm>
+        <div className="exit-icon">
+          <div>
+            <Popconfirm
+              title="Are you sure to delete this task?"
+              onConfirm={onConfirm}
+              okText="Yes"
+              cancelText="No"
+            >
+              <div className="logout" href="#">
+                Logout
               </div>
-            </div>
-          </div>
-          <div className="container-btn">
-            <div style={{ display: "block" }}>
-              {localStorage.getItem("admin") === "false" ? (
-                <div style={{ display: "flex" }}>
-                  {" "}
-                  <Button
-                    type="primary"
-                    className="btn-create"
-                    onClick={openModal_Create}
-                  >
-                    {" "}
-                    Create
-                  </Button>
-                </div>
-              ) : (
-                <div style={{ display: "flex" }}>
-                  <Button
-                    type="primary"
-                    className="btn-create"
-                    onClick={openModal_Create}
-                  >
-                    {" "}
-                    Create
-                  </Button>
-                  <button
-                    className="btn-delete-all"
-                    onClick={() => onFinish_deleteAllContact()}
-                  >
-                    Delete
-                  </button>
-                  <Select
-                    allowClear
-                    size="medium"
-                    // defaultValue={location.state.user}
-                    placeholder="Select Assigned To"
-                    className="selectAssignedTo"
-                    onChange={handleChange_filterAssignedTo}
-                  >
-                    {listUser.map((us) => (
-                      <Select.Option key={us.username} value={us.username}>
-                        {us.username}
-                      </Select.Option>
-                    ))}
-                  </Select>
-                  <Select
-                    allowClear
-                    size="medium"
-                    placeholder="Select Lead Source"
-                    className="selectLeadSource"
-                    onChange={handleChange_filterLeadSrc}
-                    // defaultValue={location.state.name}
-                  >
-                    <Select.Option value="Existing Customer">
-                      Existing Customer
-                    </Select.Option>
-                    <Select.Option value="Partner">Partner </Select.Option>
-                    <Select.Option value="Conference">
-                      Conference{" "}
-                    </Select.Option>
-                    <Select.Option value="Website">Website </Select.Option>
-                    <Select.Option value="Word of Mouth">
-                      Word of Mouth{" "}
-                    </Select.Option>
-                    <Select.Option value="Other">Other</Select.Option>
-                  </Select>
-                  <Input.Search
-                    placeholder="Search contact name"
-                    className="searchContact"
-                    onChange={(e) => handleSearch(e.target.value)}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="container-btn">
-            {localStorage.getItem("admin") === "false" ? (
-              /* Table User */
-              <Table
-                style={{ width: "100%" }}
-                dataSource={stateUser}
-                columns={columns}
-                bordered
-                rowKey="_id"
-              />
-            ) : (
-              <Table
-                rowSelection={{
-                  type: selectionType,
-                  ...rowSelection,
-                }}
-                style={{ width: "100%" }}
-                dataSource={listContact}
-                columns={columns}
-                bordered
-                rowKey="_id"
-              />
-            )}
-            ;
+            </Popconfirm>
           </div>
         </div>
+      </div>
+      <div className="container-btn">
+        <div style={{ display: "block" }}>
+          {localStorage.getItem("admin") === "false" ? (
+            <div style={{ display: "flex" }}>
+              {" "}
+              <Button
+                type="primary"
+                className="btn-create"
+                onClick={openModal_Create}
+              >
+                {" "}
+                Create
+              </Button>
+            </div>
+          ) : (
+            <div style={{ display: "flex" }}>
+              <Button
+                type="primary"
+                className="btn-create"
+                onClick={openModal_Create}
+              >
+                {" "}
+                Create
+              </Button>
+              <button
+                className="btn-delete-all"
+                onClick={() => onFinish_deleteAllContact()}
+              >
+                Delete
+              </button>
+              <Select
+                allowClear
+                size="medium"
+                // defaultValue={location.state.user}
+                placeholder="Select Assigned To"
+                className="selectAssignedTo"
+                onChange={handleChange_filterAssignedTo}
+                defaultValue={params.assignedValue}
+              >
+                {listUser.map((us) => (
+                  <Select.Option key={us.username} value={us.username}>
+                    {us.username}
+                  </Select.Option>
+                ))}
+              </Select>
+              <Select
+                allowClear
+                size="medium"
+                placeholder="Select Lead Source"
+                className="selectLeadSource"
+                onChange={handleChange_filterLeadSrc}
+                defaultValue={params.leadSourceValue}
+              >
+                <Select.Option value="Existing Customer">
+                  Existing Customer
+                </Select.Option>
+                <Select.Option value="Partner">Partner </Select.Option>
+                <Select.Option value="Conference">Conference </Select.Option>
+                <Select.Option value="Website">Website </Select.Option>
+                <Select.Option value="Word of Mouth">
+                  Word of Mouth{" "}
+                </Select.Option>
+                <Select.Option value="Other">Other</Select.Option>
+              </Select>
+              <Input.Search
+                placeholder="Search contact name"
+                className="searchContact"
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="container-btn">
+        {localStorage.getItem("admin") === "false" ? (
+          /* Table User */
+          <Table
+            style={{ width: "100%" }}
+            dataSource={listContact}
+            columns={columns}
+            bordered
+            rowKey="_id"
+          />
+        ) : (
+          <Table
+            rowSelection={{
+              type: selectionType,
+              ...rowSelection,
+            }}
+            style={{ width: "100%" }}
+            dataSource={listContact}
+            columns={columns}
+            bordered
+            rowKey="_id"
+          />
+        )}
+        ;
       </div>
     </div>
   );

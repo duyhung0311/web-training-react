@@ -1,8 +1,16 @@
 import axiosClient from "./axiosClient";
 const salesApi = {
-  getAll() {
+  getAll(params) {
     const url = `/sales_order/list`;
-    return axiosClient.post(url);
+    return axiosClient.post(
+      url,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${params}`,
+        },
+      }
+    );
   },
   post(params) {
     const url = `/sales_order/`;
