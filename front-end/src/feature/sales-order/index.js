@@ -19,7 +19,7 @@ import { CheckOutlined } from "@ant-design/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEdit, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
-import {  useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import authApi from "../../api/authApi";
 function SalesOrder() {
   let arrKey = [];
@@ -79,6 +79,7 @@ function SalesOrder() {
   const fetchSalesList = async () => {
     try {
       const token = JSON.parse(localStorage.getItem("jwt_Token"));
+      console.log(">>",token);
       // console.log("<<<<", token);
       const response = await salesApi.getAll(token);
       // console.log("Fetch list sales order successfully: ", response);
@@ -117,9 +118,11 @@ function SalesOrder() {
       //   response.data.data.salesOrder
       // );
       const result = response.data.data.salesOrder.filter((sales) =>
-        values === undefined
-          ? sales.status === params.statusValue
-          : sales.assignedTo === values || sales.status === values
+        values === undefined && Object.keys(params).length === 0
+          ? //  console.log("1")
+            sales
+          :  sales.status === params.statusValue ||
+          sales.assignedTo === values || sales.status === values
       );
       // console.log(result);
       setListSales(result);
@@ -141,25 +144,22 @@ function SalesOrder() {
     value === undefined ? fetchSalesList() : filterAssignedTo(value);
   };
   useEffect(() => {
+    const token = JSON.parse(localStorage.getItem("jwt_Token"));
     fetchUserList();
-    fetchSalesList();
+    // fetchSalesList();
     // console.log(params);
     filterAssignedTo();
     // setStateStatus(location.state.status)
     // console.log(location.state?.status)
+    // Object.keys(params).length === 0 ? (
+    //   salesApi.getAll(token).then((res) => {
+    //     setListSales(res.data.data.salesOrder);
+    //   })
+    // ) : (
+    //   <></>
+    // );
   }, []);
-    useEffect(() => {
-      const token = JSON.parse(localStorage.getItem("jwt_Token"));
-      // console.log(JSON.parse(localStorage.getItem("jwt_Token")));
-      // console.log(location.pathname);
-      // console.log(params);
-      Object.keys(params).length === 0
-        ? salesApi.getAll(token).then((res) => {
-            setListSales(res.data.data.salesOrder);
-          })
-        : <></>
-      // console.log("<<initial");
-    }, []);
+
   const openModal_Create = () => {
     setModalCreate(true);
     form.resetFields();
