@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import {  useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import "./style.css";
 import {
   Button,
@@ -40,24 +40,10 @@ function Contact(props) {
   const [selectionType, setSelectionType] = useState("checkbox");
   const typingTimeout = useRef(null);
   useEffect(() => {
-    fetchContactList();
+    // fetchContactList();
     fetchUserList();
     // console.log(params);
     filterJoint();
-  }, []);
-  useEffect(() => {
-    const token = JSON.parse(localStorage.getItem("jwt_Token"));
-    // console.log(JSON.parse(localStorage.getItem("jwt_Token")));
-    // console.log(location.pathname)
-    // console.log(params)
-    Object.keys(params).length === 0
-      ? 
-       contactApi.getAll(token).then((res) => {
-           setListContact(res.data.data.contacts);
-         })
-      :<></>
-      //  console.log("2");
-    // console.log("<<initial")
   }, []);
   const openModal_Create = () => {
     setModalCreate(true);
@@ -231,18 +217,23 @@ function Contact(props) {
     }
     const filtered = async () => {
       try {
-        // console.log(values);
+        console.log(values);
         const token = JSON.parse(localStorage.getItem("jwt_Token"));
         // console.log("<<<<", token);
         const response = await contactApi.getAll(token);
-        const result = response.data.data.contacts.filter((contacts) =>
-          values === undefined
-            ? contacts.leadSrc === params.leadSourceValue ||
-              contacts.assignedTo === params.assignedValue
-            : contacts.leadSrc === values || contacts.assignedTo === values
+        const result = response.data.data.contacts.filter(
+          (contacts) =>
+            values === undefined && Object.keys(params).length===0 ?
+            //  console.log("1")
+             contacts
+             : 
+            //  console.log("2")
+           contacts.leadSrc === params.leadSourceValue ||
+            contacts.assignedTo === params.assignedValue ||
+            contacts.leadSrc === values ||
+            contacts.assignedTo === values
         );
-        // console.log(result);
-
+        console.log(result);
         setListContact(result);
       } catch (error) {}
     };
@@ -259,7 +250,7 @@ function Contact(props) {
   const fetchContactList = async () => {
     try {
       const token = JSON.parse(localStorage.getItem("jwt_Token"));
-      // console.log("<<<<token", token);
+      console.log("<<<<token contact1123", token);
       const response = await contactApi.getAll(token);
       // console.log("api get contact all", response);
       const variable = localStorage.getItem("user");
@@ -267,6 +258,7 @@ function Contact(props) {
         (contacts) => contacts.assignedTo === variable
       );
       setStateUser(result);
+      console.log(">>response.data.data.contacts", response.data.data.contacts);
       setListContact(response.data.data.contacts);
       setIsloadingUpdate(false);
     } catch (error) {
