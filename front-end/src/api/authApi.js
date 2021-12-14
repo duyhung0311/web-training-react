@@ -4,9 +4,13 @@ const authApi = {
     const url = `/signin`;
     return axiosClient.post(url, params);
   },
-  profile() {
+  profile(token) {
     const url = `/userProfile`;
-    return axiosClient.get(url);
+    return axiosClient.get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
   },
   doLogout() {
     localStorage.removeItem("Token");

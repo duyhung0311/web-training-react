@@ -1,16 +1,13 @@
 import axios from "axios";
-const token=localStorage.getItem('Token')
+import queryString from "query-string";
 const axiosClient = axios.create({
   // baseURL: process.env.REACT_APP_API_BASE_URL,
   baseURL: "http://localhost:4040",
   headers: {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Credentials": true,
-    "Access-Control-Allow-Methods": "GET, POST, PATCH, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Origin, Content-Type, X-Auth-Token",
-    'Authorization': `Bear ${token}`,
+    // Authorization: `Bearer ${JSON.parse(localStorage.getItem("jwt_Token"))}`,
   },
+  paramsSerializer: (params) => queryString.stringify(params),
 });
 //Interceptors
 axios.interceptors.request.use(

@@ -6,31 +6,30 @@ import {
   Input,
   Radio,
   notification,
-  message,Popconfirm
+  message,
+  Popconfirm,
 } from "antd";
-import Menu from "../../components/menu";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEdit } from "@fortawesome/free-solid-svg-icons";
 import React, { useState, useEffect } from "react";
 import "./style.css";
 import userApi from "../../api/userApi";
 import { CheckOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import authApi from "../../api/authApi";
-const User = () => {
+function User (){
   const [listUser, setListUser] = useState([]);
-  const navigate=useNavigate()
+  const navigate = useNavigate();
   const [modalCreate, setModalCreate] = useState(false);
   const [dataModal, setDataModal] = useState({});
   const [modalEdit, setModalEdit] = useState(false);
-  const [debouncedState, setDebouncedState] = useState("");
   const [form] = Form.useForm();
   const [form_edit] = Form.useForm();
   const onConfirm = () => {
-    let removeToken = authApi.doLogout()
+    let removeToken = authApi.doLogout();
     if (removeToken == null) {
       localStorage.clear();
-      navigate("/");
+      navigate("/login");
     }
   };
   const openModal_Create = () => {
@@ -39,14 +38,9 @@ const User = () => {
   const openModal_Edit = (values) => {
     setModalEdit(true);
     form_edit.setFieldsValue(values);
-    setDataModal(values)
+    setDataModal(values);
     console.log(values._id);
-      
   };
-  const handleOk_createUser = () => {
-    setModalCreate(false);
-  };
-
   const handleCancel_createUser = () => {
     setModalCreate(false);
   };
@@ -104,12 +98,12 @@ const User = () => {
       ),
     },
   ];
-  const fetchEditUser = async (id,data) => {
+  const fetchEditUser = async (id, data) => {
     try {
-      const response = await userApi.edit(id,data);
+      const response = await userApi.edit(id, data);
       console.log("Fetch update user successfully:", response);
-      setListUser([...listUser,response])
-      fetchUserList()
+      setListUser([...listUser, response]);
+      fetchUserList();
       notification.warning({
         message: `Edit user successfully`,
         icon: <CheckOutlined style={{ color: "#108ee9" }} />,
@@ -121,12 +115,12 @@ const User = () => {
       console.log(error);
     }
   };
-  const onFinish_editUser =(values)=>{
+  const onFinish_editUser = (values) => {
     console.log(values);
-    const dataEdit={id:dataModal._id,data:values}
-    console.log(dataEdit)
-    fetchEditUser(dataEdit.id,dataEdit.data)
-  }
+    const dataEdit = { id: dataModal._id, data: values };
+    console.log(dataEdit);
+    fetchEditUser(dataEdit.id, dataEdit.data);
+  };
   const onFinish_createUser = (values) => {
     console.log(values);
     const fetchCreateUser = async () => {
@@ -368,53 +362,46 @@ const User = () => {
           </div>
         </Form>
       </Modal>
-      <div className="container">
-        <div className="left-side">
-          <Menu />
+      <div className="inner-topic">
+        <div className="flex-center-right-side">
+          <p>USER MANAGEMENT</p>
         </div>
-        <div className="right-side">
-          <div className="inner-topic">
-            <div className="flex-center-right-side">
-              <p>USER MANAGEMENT</p>
-            </div>
-            <div className="exit-icon">
-              <div>
-                <Popconfirm
-                  title="Are you sure to delete this task?"
-                  onConfirm={onConfirm}
-                  okText="Yes"
-                  cancelText="No"
-                >
-                  <div className="logout" href="#">
-                    Logout
-                  </div>
-                </Popconfirm>
+        <div className="exit-icon">
+          <div>
+            <Popconfirm
+              title="Are you sure to delete this task?"
+              onConfirm={onConfirm}
+              okText="Yes"
+              cancelText="No"
+            >
+              <div className="logout" href="#">
+                Logout
               </div>
-            </div>
-          </div>
-          <div className="container-btn">
-            <div style={{ display: "block" }}>
-              <Button
-                type="primary"
-                className="btn-create"
-                onClick={openModal_Create}
-              >
-                {" "}
-                Create
-              </Button>
-            </div>
-          </div>
-          <div className="container-btn">
-            <Table
-              className="table"
-              style={{ width: "100%" }}
-              dataSource={listUser}
-              columns={columns}
-              rowKey="email"
-            />
-            ;
+            </Popconfirm>
           </div>
         </div>
+      </div>
+      <div className="container-btn">
+        <div style={{ display: "block" }}>
+          <Button
+            type="primary"
+            className="btn-create"
+            onClick={openModal_Create}
+          >
+            {" "}
+            Create
+          </Button>
+        </div>
+      </div>
+      <div className="container-btn">
+        <Table
+          className="table"
+          style={{ width: "100%" }}
+          dataSource={listUser}
+          columns={columns}
+          rowKey="email"
+        />
+        ;
       </div>
     </div>
   );

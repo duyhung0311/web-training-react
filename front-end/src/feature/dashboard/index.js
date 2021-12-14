@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./style.css";
-import Menu from "../../components/menu";
 import contactApi from "../../api/contactApi";
-import { Table, Tabs, Tag, Popconfirm } from "antd";
+import { Table, Tabs, Tag, Popconfirm, notification} from "antd";
 import Chart from "react-google-charts";
 import { useNavigate } from "react-router-dom";
 import salesApi from "../../api/salesApi";
@@ -10,9 +9,9 @@ import moment from "moment";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import authApi from "../../api/authApi";
-import jwt_decode from "jwt-decode";
-import userApi from "../../api/userApi";
-function Dashboard() {
+import { CheckCircleFilled } from "@ant-design/icons";
+
+function Dashboard(props) {
   const [tableContact, setTableContact] = useState([]);
   const [tableStatus, setTableStatus] = useState([]);
   const [chartLabelContact, setChartLabelContact] = useState([]);
@@ -30,18 +29,24 @@ function Dashboard() {
   const { TabPane } = Tabs;
   let obj = {};
   const onConfirm = () => {
-    let removeToken = authApi.doLogout()
+    let removeToken = authApi.doLogout();
     if (removeToken == null) {
       localStorage.clear();
-      navigate("/");
+      navigate("/login");
     }
+    notification.success({
+      message: "Đăng xuất thành công",
+      icon: <CheckCircleFilled style={{ color: "#20da9b" }} />,
+      placement: "topRight",
+    });
   };
   const fetchGetAllContact = async () => {
     try {
-      const response = await contactApi.getAll();
-      console.log("Get all", response.data.data.contacts);
+      const token = JSON.parse(localStorage.getItem("jwt_Token"));
+      const response = await contactApi.getAll(token);
+      // console.log("Get all", response.data.data.contacts);
       const rx = response.data.data.contacts;
-      //   console.log(rx);
+      // console.log(rx);
       obj = rx.reduce(function (r, a) {
         r[a.leadSrc] = r[a.leadSrc] || [];
         r[a.leadSrc].push(a);
@@ -52,6 +57,7 @@ function Dashboard() {
       for (let x in obj) {
         newArr.push({ key: [x], value: obj[x].length });
       }
+      // console.log("data Table 1", newArr);
       for (let x in obj) {
         newArrAfter.push({ [x]: obj[x].length });
       }
@@ -67,12 +73,10 @@ function Dashboard() {
           //   setChartValueContact(...items[keys[j]], items[keys[j]]);
         }
       }
-      //   console.log(arrLabel, arrValue);
       const chartData = [["Key", "Value"]];
       for (let i = 0; i < arrLabel.length; i += 1) {
         chartData.push([arrLabel[i], arrValue[i]]);
       }
-      //   console.log(chartData);
       setChartLabelContact(chartData);
       //   setChartValueContact(arrValue)
       setTableContact(newArr);
@@ -88,8 +92,9 @@ function Dashboard() {
   };
   const fetchGetAllSalesOrder = async () => {
     try {
-      const response = await salesApi.getAll();
-      console.log("Get all sales order successfully", response);
+      const token = JSON.parse(localStorage.getItem("jwt_Token"));
+      const response = await salesApi.getAll(token);
+      // console.log("Get all sales order successfully", response);
       const rx = response.data.data.salesOrder;
       //   console.log(rx);
       obj = rx.reduce(function (r, a) {
@@ -97,7 +102,7 @@ function Dashboard() {
         r[a.status].push(a);
         return r;
       }, Object.create(null));
-      //   console.log(obj);
+      // console.log("<<<<<<a", obj);
       const newArr = [];
       const newArrAfter = [];
       for (let x in obj) {
@@ -129,7 +134,7 @@ function Dashboard() {
       const result = response.data.data.salesOrder.filter(
         (contacts) => contacts.createdTime < date
       );
-      console.log(result);
+      // console.log(result);
       setTableTimeSalesOrder(result);
     } catch (error) {
       console.log(error);
@@ -143,24 +148,24 @@ function Dashboard() {
   const clickKey = (values) => {
     console.log(values.key[0]);
     const result = values.key[0];
-    console.log(result)
-    navigate(`/contact`, { state: { name: result } });
+    console.log(result);
+    navigate(`/contact/${values.key[0]}/assignedValue/`);
   };
-  const clickSales = (values)=>{
+  const clickSales = (values) => {
     console.log(values.status[0]);
-     const result = values.status[0];
-     navigate(`/sales-order`, { state: { status: result } });
-  }
+    const result = values.status[0];
+    navigate(`/sales-order/${result}`);
+  };
   const clickLastTable = (values) => {
     console.log(values.contactName);
     setStateTable(true);
     setStateObjectRow(values);
   };
-  const clickUser =(values)=>{
+  const clickUser = (values) => {
     console.log(values.assignedTo);
     const result = values.assignedTo;
-    navigate(`/contact`, { state: { value: result } });
-  }
+    navigate(`/contact/leadSourceValue/${result}`);
+  };
   const backIcon = () => {
     setStateTable(false);
   };
@@ -220,11 +225,6 @@ function Dashboard() {
   }
   return (
     <div>
-      <div className="container">
-        <div className="left-side">
-          <Menu />
-        </div>
-        <div className="right-side">
           <div className="inner-topic">
             <div className="flex-center-right-side">
               <p>DASHBOARD MANAGEMENT</p>
@@ -232,7 +232,7 @@ function Dashboard() {
             <div className="exit-icon">
               <div>
                 <Popconfirm
-                  title="Are you sure to delete this task?"
+                  title="Are you sure to logout?"
                   onConfirm={onConfirm}
                   okText="Yes"
                   cancelText="No"
@@ -266,6 +266,7 @@ function Dashboard() {
                   className="table"
                   dataSource={tableContact}
                   bordered
+                  rowKey="key"
                 />
               </TabPane>
               <TabPane tab="Chart filtered lead source of contact" key="2">
@@ -302,6 +303,7 @@ function Dashboard() {
                   className="table"
                   dataSource={tableStatus}
                   bordered
+                  rowKey="status"
                 />
               </TabPane>
               <TabPane tab="Chart filtered status of sales order" key="4">
@@ -338,6 +340,7 @@ function Dashboard() {
                   className="table"
                   dataSource={tableTimeContact}
                   bordered
+                  rowKey="_id"
                 />
               </div>
               <div className="container-btn border-container">
@@ -355,6 +358,7 @@ function Dashboard() {
                     className="table"
                     dataSource={tableTimeSalesOrder}
                     bordered
+                    rowKey="_id"
                   />
                 ) : (
                   <div style={{ paddingLeft: "10px", width: "100%" }}>
@@ -408,8 +412,6 @@ function Dashboard() {
               </div>
             </>
           )}
-        </div>
-      </div>
     </div>
   );
 }

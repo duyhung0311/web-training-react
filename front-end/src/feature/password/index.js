@@ -1,6 +1,5 @@
 import React from "react";
 import "./style.css";
-import Menu from "../../components/menu";
 import { Form, Input, Button, Popconfirm, message, notification } from "antd";
 import authApi from "./../../api/authApi";
 import { useNavigate } from "react-router-dom";
@@ -13,7 +12,7 @@ function Password() {
     let removeToken = authApi.doLogout();
     if (removeToken == null) {
       localStorage.clear();
-      navigate("/");
+      navigate("/login");
     }
   };
   const onSubmit = async (_id, data) => {
@@ -45,11 +44,6 @@ function Password() {
   };
   return (
     <div>
-      <div className="container">
-        <div className="left-side">
-          <Menu />
-        </div>
-        <div className="right-side">
           <div className="inner-topic">
             <div className="flex-center-right-side">
               <p>PASSWORD MANAGEMENT</p>
@@ -121,8 +115,6 @@ function Password() {
               </Form>
             </div>
           </div>
-        </div>
-      </div>
     </div>
   );
 }

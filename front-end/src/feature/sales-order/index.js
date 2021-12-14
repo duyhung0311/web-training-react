@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./style.css";
-import Menu from "../../components/menu";
 import {
   Button,
   Table,
@@ -20,18 +19,17 @@ import { CheckOutlined } from "@ant-design/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEdit, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
-import { useLocation } from "react-router-dom";
+import {  useParams } from "react-router-dom";
 import authApi from "../../api/authApi";
 function SalesOrder() {
   let arrKey = [];
+  const params = useParams();
   const typingTimeout = useRef(null);
-  const location = useLocation();
   const navigate = useNavigate();
   const [listSales, setListSales] = useState([]);
   const [listUser, setListUser] = useState([]);
   const [stateUser, setStateUser] = useState([]);
   const [isloadingUpdate, setIsloadingUpdate] = useState(false);
-  const [stateStatus, setStateStatus] = useState("");
   const [modalEdit, setModalEdit] = useState(false);
   const [dataModal, setDataModal] = useState({});
   const [form] = Form.useForm();
@@ -80,15 +78,17 @@ function SalesOrder() {
   };
   const fetchSalesList = async () => {
     try {
-      const response = await salesApi.getAll();
-      console.log("Fetch list sales order successfully: ", response);
+      const token = JSON.parse(localStorage.getItem("jwt_Token"));
+      // console.log("<<<<", token);
+      const response = await salesApi.getAll(token);
+      // console.log("Fetch list sales order successfully: ", response);
       setListSales(response.data.data.salesOrder);
       const variable = localStorage.getItem("user");
-      console.log(variable);
+      // console.log(variable);
       const result = response.data.data.salesOrder.filter(
         (contacts) => contacts.assignedTo === variable
       );
-      console.log(result);
+      // console.log(result);
       setStateUser(result);
       //   setIsloadingUpdate(false);
     } catch (error) {
@@ -98,7 +98,7 @@ function SalesOrder() {
   const fetchUserList = async () => {
     try {
       const response = await usersApi.getAll();
-      console.log("Fetch list users successfully: ", response);
+      // console.log("Fetch list users successfully: ", response);
       setListUser(response.data.data.users);
 
       //   setIsloadingUpdate(false);
@@ -107,20 +107,21 @@ function SalesOrder() {
     }
   };
   const filterAssignedTo = async (values) => {
+    // console.log(values);
+    if (values) navigate("/sales-order");
     try {
-      console.log(location.state.status);
-      const response = await salesApi.getAll();
-      console.log(
-        "Fetch list sales order successfully: ",
-        response.data.data.salesOrder
+      const token = JSON.parse(localStorage.getItem("jwt_Token"));
+      const response = await salesApi.getAll(token);
+      // console.log(
+      //   "Fetch list sales order successfully: ",
+      //   response.data.data.salesOrder
+      // );
+      const result = response.data.data.salesOrder.filter((sales) =>
+        values === undefined
+          ? sales.status === params.statusValue
+          : sales.assignedTo === values || sales.status === values
       );
-      const result = response.data.data.salesOrder.filter(
-        (contacts) =>
-          contacts.assignedTo === values ||
-          contacts.status === values ||
-          contacts.status === location.state.status
-      );
-      console.log(result);
+      // console.log(result);
       setListSales(result);
     } catch (error) {}
   };
@@ -132,7 +133,7 @@ function SalesOrder() {
     let removeToken = authApi.doLogout();
     if (removeToken == null) {
       localStorage.clear();
-      navigate("/");
+      navigate("/login");
     }
   };
   const handleChange_filterStatus = (value) => {
@@ -142,13 +143,23 @@ function SalesOrder() {
   useEffect(() => {
     fetchUserList();
     fetchSalesList();
+    // console.log(params);
+    filterAssignedTo();
     // setStateStatus(location.state.status)
     // console.log(location.state?.status)
   }, []);
-  // useEffect(() => {
-  //   filterAssignedTo();
-  //   console.log(location.state.status);
-  // }, 1);
+    useEffect(() => {
+      const token = JSON.parse(localStorage.getItem("jwt_Token"));
+      // console.log(JSON.parse(localStorage.getItem("jwt_Token")));
+      // console.log(location.pathname);
+      // console.log(params);
+      Object.keys(params).length === 0
+        ? salesApi.getAll(token).then((res) => {
+            setListSales(res.data.data.salesOrder);
+          })
+        : <></>
+      // console.log("<<initial");
+    }, []);
   const openModal_Create = () => {
     setModalCreate(true);
     form.resetFields();
@@ -175,7 +186,7 @@ function SalesOrder() {
       try {
         const response = await salesApi.post(values);
         console.log("Fetch create sales order successfully: ", response);
-        setListUser([...listSales, response]);
+        setListSales([...listSales, response]);
         fetchSalesList();
         notification.success({
           message: `Create sales order successfully`,
@@ -542,124 +553,113 @@ function SalesOrder() {
           </div>
         </Form>
       </Modal>
-      <div className="container">
-        <div className="left-side">
-          <Menu />
+      <div className="inner-topic">
+        <div className="flex-center-right-side">
+          <p>SALES ORDER MANAGEMENT</p>
         </div>
-        <div className="right-side">
-          <div className="inner-topic">
-            <div className="flex-center-right-side">
-              <p>SALES ORDER MANAGEMENT</p>
-            </div>
-            <div className="exit-icon">
-              <div>
-                <Popconfirm
-                  title="Are you sure to delete this task?"
-                  onConfirm={onConfirm}
-                  okText="Yes"
-                  cancelText="No"
-                >
-                  <div className="logout" href="#">
-                    Logout
-                  </div>
-                </Popconfirm>
+        <div className="exit-icon">
+          <div>
+            <Popconfirm
+              title="Are you sure to delete this task?"
+              onConfirm={onConfirm}
+              okText="Yes"
+              cancelText="No"
+            >
+              <div className="logout" href="#">
+                Logout
               </div>
-            </div>
-          </div>
-          <div className="container-btn">
-            <div style={{ display: "block" }}>
-              {localStorage.getItem("admin") === "false" ? (
-                <div style={{ display: "flex" }}>
-                  <Button
-                    type="primary"
-                    className="btn-create"
-                    onClick={openModal_Create}
-                  >
-                    {" "}
-                    Create
-                  </Button>
-                </div>
-              ) : (
-                <div style={{ display: "flex" }}>
-                  <Button
-                    type="primary"
-                    className="btn-create"
-                    onClick={openModal_Create}
-                  >
-                    {" "}
-                    Create
-                  </Button>
-                  <button
-                    className="btn-delete-all"
-                    onClick={() => onFinish_deleteAllSalesOrder()}
-                  >
-                    Delete
-                  </button>
-                  <Select
-                    allowClear
-                    size="medium"
-                    placeholder="Select Assigned To"
-                    className="selectAssignedTo"
-                    onChange={handleChange_filterAssignedTo}
-                  >
-                    {listUser.map((us) => (
-                      <Select.Option key={us.username} value={us.username}>
-                        {us.username}
-                      </Select.Option>
-                    ))}
-                  </Select>
-                  <Select
-                    allowClear
-                    size="medium"
-                    placeholder="Select Status"
-                    className="selectLeadSource"
-                    onChange={(e) =>
-                      handleChange_filterStatus(setStateStatus(e))
-                    }
-                    // defaultValue={location.state.name}
-                    value={stateStatus}
-                  >
-                    <Select.Option value="Created">Created</Select.Option>
-                    <Select.Option value="Approved">Approved </Select.Option>
-                    <Select.Option value="Delivered">Delivered </Select.Option>
-                    <Select.Option value="Cancelled">Cancelled </Select.Option>
-                  </Select>
-                  <Input.Search
-                    placeholder="Search contact name"
-                    className="searchContact"
-                    onChange={(e) => handleSearch(e.target.value)}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="container-btn">
-            {localStorage.getItem("admin") === "false" ? (
-              <Table
-                style={{ width: "100%" }}
-                dataSource={stateUser}
-                columns={columns}
-                bordered
-                rowKey="_id"
-              />
-            ) : (
-              <Table
-                rowSelection={{
-                  type: selectionType,
-                  ...rowSelection,
-                }}
-                style={{ width: "100%" }}
-                dataSource={listSales}
-                columns={columns}
-                bordered
-                rowKey="_id"
-              />
-            )}
-            ;
+            </Popconfirm>
           </div>
         </div>
       </div>
-      {stateStatus}
+      <div className="container-btn">
+        <div style={{ display: "block" }}>
+          {localStorage.getItem("admin") === "false" ? (
+            <div style={{ display: "flex" }}>
+              <Button
+                type="primary"
+                className="btn-create"
+                onClick={openModal_Create}
+              >
+                {" "}
+                Create
+              </Button>
+            </div>
+          ) : (
+            <div style={{ display: "flex" }}>
+              <Button
+                type="primary"
+                className="btn-create"
+                onClick={openModal_Create}
+              >
+                {" "}
+                Create
+              </Button>
+              <button
+                className="btn-delete-all"
+                onClick={() => onFinish_deleteAllSalesOrder()}
+              >
+                Delete
+              </button>
+              <Select
+                allowClear
+                size="medium"
+                placeholder="Select Assigned To"
+                className="selectAssignedTo"
+                onChange={handleChange_filterAssignedTo}
+              >
+                {listUser.map((us) => (
+                  <Select.Option key={us.username} value={us.username}>
+                    {us.username}
+                  </Select.Option>
+                ))}
+              </Select>
+              <Select
+                allowClear
+                size="medium"
+                placeholder="Select Status"
+                className="selectLeadSource"
+                onChange={handleChange_filterStatus}
+                defaultValue={params.statusValue}
+              >
+                <Select.Option value="Created">Created</Select.Option>
+                <Select.Option value="Approved">Approved </Select.Option>
+                <Select.Option value="Delivered">Delivered </Select.Option>
+                <Select.Option value="Cancelled">Cancelled </Select.Option>
+              </Select>
+              <Input.Search
+                placeholder="Search contact name"
+                className="searchContact"
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="container-btn">
+        {localStorage.getItem("admin") === "false" ? (
+          <Table
+            style={{ width: "100%" }}
+            dataSource={listSales}
+            columns={columns}
+            bordered
+            rowKey="_id"
+          />
+        ) : (
+          <Table
+            rowSelection={{
+              type: selectionType,
+              ...rowSelection,
+            }}
+            style={{ width: "100%" }}
+            dataSource={listSales}
+            columns={columns}
+            bordered
+            rowKey="_id"
+          />
+        )}
+        ;
+      </div>
     </div>
   );
 }
